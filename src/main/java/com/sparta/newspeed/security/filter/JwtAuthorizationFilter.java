@@ -40,7 +40,8 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
             if (!jwtUtil.validateAccessToken(tokenValue)) {
                 log.error("Token Error");
-                return;
+                throw new RuntimeException("Token Error");
+//                return;
             }
 
             Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
@@ -49,7 +50,8 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                 setAuthentication(info.getSubject());
             } catch (Exception e) {
                 log.error(e.getMessage());
-                return;
+                throw new RuntimeException("유효한 유저의 정보가 아닙니다.");
+//                return;
             }
         }
 

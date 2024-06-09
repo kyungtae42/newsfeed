@@ -1,5 +1,7 @@
 package com.sparta.newspeed.config;
 
+import com.sparta.newspeed.security.AccessDeniedHandler;
+import com.sparta.newspeed.security.AuthenticationEntryPoint;
 import com.sparta.newspeed.security.filter.JwtAuthorizationFilter;
 import com.sparta.newspeed.security.service.UserDetailsServiceImpl;
 import com.sparta.newspeed.security.util.JwtUtil;
@@ -18,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 
 @Configuration
 @EnableWebSecurity // Spring Security 지원을 가능하게 함
@@ -54,6 +57,11 @@ public class WebSecurityConfig {
         // 기본 설정인 Session 방식은 사용하지 않고 JWT 방식을 사용하기 위한 설정
         http.sessionManagement((sessionManagement) ->
                 sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        );
+
+        http.exceptionHandling(exception -> exception
+                .authenticationEntryPoint(new AuthenticationEntryPoint())
+                .accessDeniedHandler(new AccessDeniedHandler())
         );
 
         http.authorizeHttpRequests((authorizeHttpRequests) ->
