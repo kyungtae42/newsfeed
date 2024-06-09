@@ -15,6 +15,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +38,24 @@ public class S3Service {
             e.printStackTrace();
             return null;
         }
+    }
+    public List<String> uploadFileList(List<MultipartFile> files) {
+        List<String> fileNameList = new ArrayList<>();
+        for(MultipartFile file : files) {
+            try {
+                String fileName = file.getOriginalFilename();
+                String fileUrl = "https://" + bucket + "/test" + fileName;
+                ObjectMetadata metadata = new ObjectMetadata();
+                metadata.setContentType(file.getContentType());
+                metadata.setContentLength(file.getSize());
+                amazonS3Client.putObject(bucket, fileName, file.getInputStream(), metadata);
+                fileNameList.add(fileName);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+        return fileNameList;
     }
     public String readFile(String fileName) {
         URL url = amazonS3Client.getUrl(bucket, fileName);

@@ -1,18 +1,23 @@
 package com.sparta.newspeed.newsfeed.service;
 
+import com.sparta.newspeed.awss3.S3Service;
 import com.sparta.newspeed.common.exception.CustomException;
 import com.sparta.newspeed.common.exception.ErrorCode;
 import com.sparta.newspeed.newsfeed.dto.NewsfeedRequestDto;
 import com.sparta.newspeed.newsfeed.dto.NewsfeedResponseDto;
 import com.sparta.newspeed.newsfeed.entity.Newsfeed;
+import com.sparta.newspeed.newsfeed.entity.NewsfeedImg;
 import com.sparta.newspeed.newsfeed.entity.Ott;
+import com.sparta.newspeed.newsfeed.repository.NewsfeedImgRepository;
 import com.sparta.newspeed.newsfeed.repository.NewsfeedRespository;
 import com.sparta.newspeed.newsfeed.repository.OttRepository;
 import com.sparta.newspeed.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -20,7 +25,9 @@ import java.util.List;
 public class NewsfeedService {
 
     private final NewsfeedRespository newsfeedRespository;
+    private final NewsfeedImgRepository newsfeedImgRepository;
     private final OttRepository ottRepository;
+    private final S3Service s3Service;
 
     public List<NewsfeedResponseDto> getNewsfeeds() {
         List<Newsfeed> newsfeedList = newsfeedRespository.findAllByOrderByCreatedAtDesc();
@@ -32,11 +39,23 @@ public class NewsfeedService {
     }
     public NewsfeedResponseDto getNewsfeed(Long newsfeedSeq) {
         Newsfeed newsfeed = findNewsfeed(newsfeedSeq);
-        return new NewsfeedResponseDto(newsfeed);
+        List<NewsfeedImg> fileList = newsfeed.getImgList();
+
+        NewsfeedResponseDto responseDto = new NewsfeedResponseDto(newsfeed);
+        if(fileList != null) {
+            List<String> fileUrlList = new ArrayList<>();
+            for(NewsfeedImg file : fileList) {
+                fileUrlList.add(s3Service.readFile(file.getFileName()));
+            }
+            responseDto.setFileUrlList(fileUrlList);
+        }
+        return responseDto;
     }
 
-    public NewsfeedResponseDto createNewsFeed(NewsfeedRequestDto request, User user) {
+    public NewsfeedResponseDto createNewsFeed(NewsfeedRequestDto request, List<MultipartFile> fileList, User user) {
         Ott ott = findOtt(request);
+        List<String> fileNameList = null;
+        List<String> fileUrlList = new ArrayList<>();
         if (!isRemainMembersValid(ott, request.getRemainMember())) {
             throw new CustomException(ErrorCode.NEWSFEED_REMAIN_MEMBER_OVER);
         }
@@ -49,10 +68,21 @@ public class NewsfeedService {
                 .user(user)
                 .ott(ott)
                 .build();
-
         Newsfeed saveNewsfeed = newsfeedRespository.save(newsfeed);
-
-        return new NewsfeedResponseDto(saveNewsfeed);
+        NewsfeedResponseDto responseDto = new NewsfeedResponseDto(saveNewsfeed);
+        if(fileList != null) {
+            fileNameList = s3Service.uploadFileList(fileList);
+            for(String fileName : fileNameList) {
+                NewsfeedImg img = NewsfeedImg.builder()
+                        .fileName(fileName)
+                        .newsFeed(newsfeed)
+                        .build();
+                newsfeedImgRepository.save(img);
+                fileUrlList.add(s3Service.readFile(img.getFileName()));
+            }
+        }
+        responseDto.setFileUrlList(fileUrlList);
+        return responseDto;
     }
 
     @Transactional

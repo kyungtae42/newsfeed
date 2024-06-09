@@ -6,6 +6,8 @@ import com.sparta.newspeed.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -34,6 +36,9 @@ public class Newsfeed extends Timestamped {
     @ManyToOne
     @JoinColumn(name = "ott_seq")
     private Ott ott;
+
+    @OneToMany(mappedBy = "newsFeed", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
+    List<NewsfeedImg> imgList;
 
     public void updateNewsfeed(NewsfeedRequestDto request,Ott ott) {
         this.title = request.getTitle();

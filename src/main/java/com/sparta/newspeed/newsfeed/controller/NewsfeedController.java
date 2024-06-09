@@ -2,6 +2,7 @@ package com.sparta.newspeed.newsfeed.controller;
 
 import com.sparta.newspeed.newsfeed.dto.NewsfeedRequestDto;
 import com.sparta.newspeed.newsfeed.dto.NewsfeedResponseDto;
+import com.sparta.newspeed.newsfeed.entity.NewsfeedImg;
 import com.sparta.newspeed.newsfeed.service.NewsfeedService;
 import com.sparta.newspeed.security.service.UserDetailsImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,9 +10,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,9 +27,11 @@ public class NewsfeedController {
     private final NewsfeedService newsfeedService;
 
     @Operation(summary = "createNewsFeed", description = "뉴스피드 생성 기능입니다.")
-    @PostMapping
-    public ResponseEntity<NewsfeedResponseDto> createNewsFeed(@Valid @RequestBody NewsfeedRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails){
-        return ResponseEntity.status(HttpStatus.CREATED).body(newsfeedService.createNewsFeed(requestDto,userDetails.getUser()));
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<NewsfeedResponseDto> createNewsFeed(@Valid @RequestPart NewsfeedRequestDto requestDto,
+                                                              @RequestPart(required = false) List<MultipartFile> fileList,
+                                                              @AuthenticationPrincipal UserDetailsImpl userDetails){
+        return ResponseEntity.status(HttpStatus.CREATED).body(newsfeedService.createNewsFeed(requestDto, fileList, userDetails.getUser()));
     }
 
     @Operation(summary = "getNewsfeeds", description = "뉴스피드 전체조회 기능입니다.")
