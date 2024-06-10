@@ -25,4 +25,8 @@ public class NewsfeedImg {
     @ManyToOne
     @JoinColumn(name = "newsfeed_seq")
     private Newsfeed newsFeed;
+
+    public void updateFileName(String fileName) {
+        this.fileName = fileName;
+    }
 }

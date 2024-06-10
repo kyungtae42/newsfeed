@@ -101,4 +101,5 @@ class UserServiceTest {
 
         assertEquals(passwordEncoder.matches("newPassword", user.getUserPassword()), true);
     }
+
 }

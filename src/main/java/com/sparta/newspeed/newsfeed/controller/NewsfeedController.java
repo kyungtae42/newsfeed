@@ -16,6 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
 
 @Tag(name = "Newsfeed API", description = "Newsfeed API 입니다")
@@ -47,9 +48,12 @@ public class NewsfeedController {
     }
 
     @Operation(summary = "updateNewsfeed", description = "뉴스피드 수정 기능입니다.")
-    @PutMapping("/{newsfeedSeq}")
-    private ResponseEntity<NewsfeedResponseDto> updateNewsfeed(@PathVariable("newsfeedSeq") Long newsfeedSeq, @Valid @RequestBody NewsfeedRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails){
-        return ResponseEntity.ok().body(newsfeedService.updateNewsFeed(newsfeedSeq,requestDto,userDetails.getUser()));
+    @PutMapping(path = "/{newsfeedSeq}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    private ResponseEntity<NewsfeedResponseDto> updateNewsfeed(@PathVariable("newsfeedSeq") Long newsfeedSeq,
+                                                               @Valid @RequestPart NewsfeedRequestDto requestDto,
+                                                               @AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                               @RequestPart(required = false) List<MultipartFile> fileList){
+        return ResponseEntity.ok().body(newsfeedService.updateNewsFeed(newsfeedSeq,requestDto,userDetails.getUser(),fileList));
     }
 
     @Operation(summary = "deleteNewsfeed", description = "뉴스피드 삭제 기능입니다.")

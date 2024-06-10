@@ -20,7 +20,10 @@ public enum ErrorCode {
     COMMENT_NOT_FOUND(404,"댓글을 찾을 수 없습니다."),
     COMMENT_NOT_USER(400, "해당 댓글의 작성자가 아닙니다."),
     TOKEN_EXPIRED(400, "토큰이 만료되었습니다."),
-    TOKEN_NOT_FOUND(400, "토큰을 찾을 수 없습니다.")
+    TOKEN_NOT_FOUND(400, "토큰을 찾을 수 없습니다."),
+    WRONG_FILE_FORMAT(400, "잘못된 파일 포맷입니다."),
+    IMG_SIZE_OUTOFRANGE(400, "사진의 크기가 10mb 초과입니다."),
+    VIDEO_SIZE_OUTOFRANGE(400, "동영상의 크기가 200mb 초과입니다.")
     ;
     private int status;
     private String msg;

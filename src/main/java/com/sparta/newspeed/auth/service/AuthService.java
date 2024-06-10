@@ -46,7 +46,7 @@ public class AuthService {
         UserRoleEnum role = UserRoleEnum.USER;
         String fileName = null;
         if (file != null) {
-            fileName = s3Service.uploadFile(file);
+            fileName = s3Service.uploadFile(file, "profile");
         }
 
         // 사용자 등록

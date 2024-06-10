@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -86,15 +87,55 @@ public class NewsfeedService {
     }
 
     @Transactional
-    public NewsfeedResponseDto updateNewsFeed(Long newsfeedSeq, NewsfeedRequestDto request, User user) {
+    public NewsfeedResponseDto updateNewsFeed(Long newsfeedSeq, NewsfeedRequestDto request, User user, List<MultipartFile> fileList) {
         Newsfeed newsfeed = findNewsfeed(newsfeedSeq,user);
+        List<String> fileUrlList = new ArrayList<>();
         Ott ott = findOtt(request);
         if (!isRemainMembersValid(ott, request.getRemainMember())) {
             throw new CustomException(ErrorCode.NEWSFEED_REMAIN_MEMBER_OVER);
         }
         newsfeed.updateNewsfeed(request,ott);
+        NewsfeedResponseDto responseDto = new NewsfeedResponseDto(newsfeed);
 
-        return new NewsfeedResponseDto(newsfeed);
+        if(fileList != null) {
+            List<NewsfeedImg> imgList = newsfeedImgRepository.findAllByNewsFeed(newsfeed);
+            if(!imgList.isEmpty()) {
+                if(imgList.size() >= fileList.size()) {
+                    for (int i = 0; i < fileList.size(); i++) {
+                        s3Service.deleteFile(imgList.get(i).getFileName());
+                        imgList.get(i).updateFileName(s3Service.uploadFile(fileList.get(i), "newsfeed"));
+                        fileUrlList.add(s3Service.readFile(imgList.get(i).getFileName()));
+                    }
+                } else if (imgList.size() < fileList.size()) {
+                    int i = 0;
+                    for (i = 0; i < imgList.size(); i++) {
+                        s3Service.deleteFile(imgList.get(i).getFileName());
+                        imgList.get(i).updateFileName(s3Service.uploadFile(fileList.get(i), "newsfeed"));
+                        fileUrlList.add(s3Service.readFile(imgList.get(i).getFileName()));
+                    }
+                    for (int j = i; j < fileList.size(); j++) {
+                        //System.out.println("j = " + j);
+                        NewsfeedImg img = NewsfeedImg.builder()
+                                .fileName(s3Service.uploadFile(fileList.get(j), "newsfeed"))
+                                .newsFeed(newsfeed)
+                                .build();
+                        fileUrlList.add(s3Service.readFile(img.getFileName()));
+                    }
+                }
+            } else {
+                List<String> fileNameList = s3Service.uploadFileList(fileList);
+                for(String fileName : fileNameList) {
+                    NewsfeedImg img = NewsfeedImg.builder()
+                            .fileName(fileName)
+                            .newsFeed(newsfeed)
+                            .build();
+                    newsfeedImgRepository.save(img);
+                    fileUrlList.add(s3Service.readFile(img.getFileName()));
+                }
+            }
+            responseDto.setFileUrlList(fileUrlList);
+        }
+        return responseDto;
     }
 
     public void deleteNewsFeed(Long newsfeedSeq, User user) {
